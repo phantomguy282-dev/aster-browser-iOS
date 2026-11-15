@@ -17,7 +17,7 @@ jobs:
   # Developer identity configured as repository secrets, which is intentionally
   # not part of this workflow.
   validate:
-    runs-on: macos-14
+    runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
       - name: Show Xcode version
