@@ -51,6 +51,18 @@ final class DownloadCoordinator: NSObject, URLSessionDownloadDelegate {
         changed?()
     }
     @discardableResult
+    /// Cookies already scoped to the approved download URL's origin.
+    /// WebKit's cookie store returns all cookies; this filter keeps only
+    /// domain-matching ones so no cross-origin cookie value is forwarded.
+    static func cookiesFor(url: URL, cookies: [HTTPCookie]) -> [HTTPCookie] {
+        let host = url.host?.lowercased() ?? ""
+        guard !host.isEmpty else { return [] }
+        return cookies.filter { cookie in
+            let domain = cookie.domain.lowercased()
+            let matches = domain == host || domain.hasPrefix(".") && host.hasSuffix(domain) || host.hasSuffix("." + domain.trimmingCharacters(in: CharacterSet(arrayLiteral: ".")))
+            return matches && (cookie.isSecure ? url.scheme == "https" : true)
+        }
+    }
     func start(url: URL, name: String, mime: String, size: Int64, cookies: [HTTPCookie], privateMode: Bool) throws -> UUID {
         guard url.scheme == "https", (try? WebPolicy.webURL(url.absoluteString)) != nil else { throw BrowserFailure(message: "Download Guard requires an HTTPS source. HTTP downloads are not supported in this preview.") }
         guard size <= DownloadInspector.maximumBytes, active.count < 3, records.count < 200 else { throw BrowserFailure(message: "Limit: 100 MiB per file, 3 simultaneous downloads, 200 retained records.") }
