@@ -1,0 +1,50 @@
+name: Validate iOS project (macOS)
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  # The project uses XcodeGen. This workflow validates that the project.yml
+  # generates a valid Xcode project and that the Swift sources compile for
+  # the simulator. No signing, no IPA: an unsigned IPA is NOT installable and
+  # is never produced here. A signed archive requires the owner's Apple
+  # Developer identity configured as repository secrets, which is intentionally
+  # not part of this workflow.
+  validate:
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+      - name: Show Xcode version
+        run: xcodebuild -version
+      - name: Install XcodeGen
+        run: brew install xcodegen
+      - name: Generate Xcode project
+        run: xcodegen generate --spec project.yml
+      - name: Build for simulator (no signing)
+        run: |
+          set -o pipefail
+          xcodebuild -project AsterMobile.xcodeproj \
+            -scheme AsterMobile \
+            -configuration Debug \
+            -sdk iphonesimulator \
+            -destination 'generic/platform=iOS Simulator' \
+            -derivedDataPath DerivedData \
+            CODE_SIGNING_ALLOWED=NO \
+            build 2>&1 | tail -40
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ios-simulator-build-${{ github.sha }}
+          path: DerivedData/Build/Products/Debug-iphonesimulator
+          if-no-files-found: warn
+      # Unit tests require a concrete simulator destination; uncomment when
+      # the owner confirms a simulator preference (e.g. iPhone 15):
+      # - name: Run tests
+      #   run: |
+      #     xcodebuild -project AsterMobile.xcodeproj -scheme AsterMobile \
+      #       -destination 'platform=iOS Simulator,name=iPhone 15' test
