@@ -1,0 +1,35 @@
+name: AsterMobile
+options:
+  deploymentTarget:
+    iOS: "16.0"
+  xcodeVersion: "16.0"
+settings:
+  base:
+    SWIFT_VERSION: "5.0"
+    MARKETING_VERSION: "4.0.0"
+    CURRENT_PROJECT_VERSION: "1"
+    CODE_SIGN_STYLE: Automatic
+    TARGETED_DEVICE_FAMILY: "1,2"
+targets:
+  AsterMobile:
+    type: application
+    platform: iOS
+    sources: [Sources]
+    resources: [Resources]
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: app.aster.mobile
+        INFOPLIST_FILE: Resources/Info.plist
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+    scheme:
+      testTargets: [AsterMobileTests]
+  AsterMobileTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources: [Tests]
+    dependencies:
+      - target: AsterMobile
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: app.aster.mobile.tests
+        GENERATE_INFOPLIST_FILE: YES
